@@ -1,0 +1,86 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  VpcId:
+    Type: String
+
+Resources:
+  frontendSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: frontendSG
+      GroupDescription: Security for Book Store App Frontend
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 5173
+          ToPort: 5173
+          CidrIp: 0.0.0.0/0
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: frontendSG
+      VpcId: !Ref VpcId
+
+  backendSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: backendSG
+      GroupDescription: Security for Book Store App Backend
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 5000
+          ToPort: 5000
+          CidrIp: 0.0.0.0/0
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: backendSG
+      VpcId: !Ref VpcId
+
+  lbSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: lbSG
+      GroupDescription: Security for Load Balancer
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 5173
+          ToPort: 5173
+          CidrIp: 0.0.0.0/0
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: lbSG
+      VpcId: !Ref VpcId
+
+  lbSgBackend:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: lbSgBackend
+      GroupDescription: Security for Load Balancer Backend
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 5000
+          ToPort: 5000
+          CidrIp: 0.0.0.0/0
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: lbSG
+      VpcId: !Ref VpcId

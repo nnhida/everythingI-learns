@@ -1,0 +1,102 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  VpcId:
+    Type: String
+  SubnetId1:
+    Type: String
+  SubnetId2:
+    Type: String
+  sgId:
+    Type: String
+  sgIdBackend:
+    Type: String
+
+Resources:
+  LB:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      IpAddressType: ipv4
+      Name: bookstoreApp-LB
+      Scheme: internet-facing
+      SecurityGroups:
+        - !Ref sgId
+      Subnets:
+        - !Ref SubnetId1
+        - !Ref SubnetId2
+      Tags:
+        - Key: Name
+          Value: bookstoreApp-LB
+      Type: application
+
+  targetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: bookstoreApp-TG
+      HealthCheckPath: /
+      HealthCheckIntervalSeconds: 30
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 2
+      Port: 5173
+      Protocol: HTTP
+      TargetType: instance
+      # Targets:
+      #   - Id: i-0b0e7c5a7d6474610
+      Tags:
+        - Key: Name
+          Value: bookstoreApp-TG
+      VpcId: !Ref VpcId
+
+  listener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref LB
+      Port: 80
+      Protocol: HTTP
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref targetGroup
+
+  lbBackend:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      IpAddressType: ipv4
+      Name: bookstoreApp-lbBackend
+      Scheme: internet-facing
+      SecurityGroups:
+        - !Ref sgIdBackend
+      Subnets:
+        - !Ref SubnetId1
+        - !Ref SubnetId2
+      Tags:
+        - Key: Name
+          Value: bookstoreApp-lbBackend
+      Type: application
+
+  targetGroupBackend:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: bookstoreApp-tgBackend
+      HealthCheckPath: /
+      HealthCheckIntervalSeconds: 30
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 2
+      Port: 5000
+      Protocol: HTTP
+      TargetType: instance
+      # Targets:
+      #   - Id: i-04c4b9dc51a04bab1
+      Tags:
+        - Key: Name
+          Value: bookstoreApp-tgBackend
+      VpcId: !Ref VpcId
+
+  listenerBackend:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref lbBackend
+      Port: 80
+      Protocol: HTTP
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref targetGroupBackend

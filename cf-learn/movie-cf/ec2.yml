@@ -1,0 +1,55 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Learn CF
+
+Parameters:
+  VpcId:
+    Type: String
+  SubnetId:
+    Type: String
+
+Resources:
+  SG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: movieApp-SG
+      GroupDescription: Security for movieApp
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 8000
+          ToPort: 8000
+          CidrIp: 0.0.0.0/0
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: movieApp-SG
+      VpcId: !Ref VpcId
+
+  EC2:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-01816d07b1128cd2d
+      InstanceType: t2.micro
+      VpcId: !Ref VpcId
+      SubnetId: !Ref SubnetId
+      SecurityGroupIds:
+        - !Ref SG
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          sudo -u ec2-user -i <<'EOF'
+          sudo yum update -y
+          sudo yum install nodejs npm git -y
+          git clone https://github.com/nnhida/movie-app.git
+          cd movie-app
+          touch .env
+          echo "MONGO_USERNAME = 'user0'" >> .env
+          echo "MONGO_PASSWORD = 'usernolpassword'" >> .env
+          npm install
+          sudo npm install pm2 -g
+          pm2 start src/index.js
+          EOF
+      Tags:
+        - Key: Name
+          Value: Movie-App

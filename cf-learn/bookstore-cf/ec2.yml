@@ -1,0 +1,73 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  VpcId:
+    Type: String
+  SubnetId:
+    Type: String
+  sgFrontend:
+    Type: String
+  sgBackend:
+    Type: String
+
+Resources:
+  frontend:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-01816d07b1128cd2d
+      InstanceType: t2.micro
+      VpcId: !Ref VpcId
+      SubnetId: !Ref SubnetId
+      SecurityGroupIds:
+        - !Ref sgFrontend
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          sudo -u ec2-user -i <<'EOF'
+          sudo yum update -y
+          sudo yum install nodejs npm git -y
+          git clone https://github.com/nnhida/frontend-bookstore.git
+          cd frontend-bookstore
+          touch .env.local
+          echo "VITE_API_KEY='AIzaSyA9R46F4L_YbX09UPzcXPqGyyuw6MY-jkw'" >> .env.local
+          echo "VITE_AUTH_DOMAIN='book-store-ad53f.firebaseapp.com'" >> .env.local
+          echo "VITE_PROJECT_ID='book-store-ad53f'" >> .env.local
+          echo "VITE_STORAGE_BUCKET='book-store-ad53f.firebasestorage.app'" >> .env.local
+          echo "VITE_MESSAGING_SENDERID='476559997114'" >> .env.local
+          echo "VITE_APPID='1:476559997114:web:512fdda5883ef9f0596a83'" >> .env.local
+          npm install
+          sudo npm install pm2 -g
+          pm2 start npm -- run dev
+          EOF
+      Tags:
+        - Key: Name
+          Value: Bookstore-App-Frontend
+
+  backend:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-01816d07b1128cd2d
+      InstanceType: t2.micro
+      VpcId: !Ref VpcId
+      SubnetId: !Ref SubnetId
+      SecurityGroupIds:
+        - !Ref sgBackend
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          sudo -u ec2-user -i <<'EOF'
+          sudo yum update -y
+          sudo yum install nodejs npm git -y
+          git clone https://github.com/nnhida/backend-bookstore.git
+          cd backend-bookstore
+          touch .env
+          echo "DB_URL='mongodb+srv://userdb0:sv6hKp60pIo4yVxP@cluster0.0zjbe.mongodb.net/book-store?retryWrites=true&w=majority&appName=Cluster0'" >> .env
+          echo "PORT='5000'" >> .env
+          echo "API_URL='lbfe-159882482.us-east-1.elb.amazonaws.com'" >> .env
+          npm install
+          sudo npm install pm2 -g
+          pm2 start index.js
+          EOF
+      Tags:
+        - Key: Name
+          Value: Bookstore-App-Backend
